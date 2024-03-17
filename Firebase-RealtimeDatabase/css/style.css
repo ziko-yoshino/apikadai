@@ -1,0 +1,104 @@
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    max-width: 600px;
+    margin: auto;
+    margin-top: 50px;
+    border: 1px solid #ccc;
+    background: linear-gradient(to right, #d09a7a, #D56256); /* Gradient background */
+    background-repeat: no-repeat; /* No repeat for gradient */
+    position: relative; /* Set the position relative for pseudo-element */
+  }
+  
+  .chat-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url('nekopi&hiyopi.png'); /* Your PNG image */
+    background-size: contain; /* This will scale the image to fit the content area */
+    background-repeat: no-repeat; /* This will prevent the image from repeating */
+    opacity: 1; /* Full opacity to not see the gradient through the image */
+    z-index: -1; /* Place the pseudo-element behind the content */
+  }
+  
+  /* Additional styles for chat-container content to position above the background image */
+  .chat-container > * {
+    position: relative;
+    z-index: 1;
+  }
+  
+ /* Overall calendar container */
+.calendar-container {
+  max-width: 1000px; /* Adjust based on your preference */
+  margin: auto;
+  background-color: white;
+  border: 1px solid #ddd;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* subtle shadow for depth */
+}
+
+/* Header row for days of the week */
+.calendar-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background-color: #f9f9f9; /* light grey background */
+  text-align: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #ddd;
+}
+
+/* Day header styling */
+.calendar-header div {
+  font-weight: bold;
+  color: #666;
+}
+
+/* The calendar grid */
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr); /* 7 days */
+  grid-template-rows: repeat(auto-fill, minmax(100px, auto)); /* Adjust row height */
+  gap: 1px; /* Gap for grid */
+  background-color: #ddd; /* Background of the gap */
+}
+
+/* Each day cell in the calendar */
+.calendar-day {
+  background-color: white;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+  border-bottom: 1px solid #ddd;
+  position: relative; /* For absolute positioning within */
+}
+
+/* Events within each day */
+.calendar-event {
+  position: absolute;
+  left: 10px; /* Match the day cell padding */
+  right: 10px; /* Match the day cell padding */
+  background-color: blue; /* Event color */
+  color: white; /* Text color */
+  padding: 5px;
+  border-radius: 4px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2); /* subtle shadow for depth */
+  font-size: 0.85em;
+}
+
+/* Positioning for events can be done with JavaScript by setting the 'top' and 'height' styles dynamically based on event time */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body, html {
+  height: 100%;
+  min-height: 100%;
+}
+
+footer {
+  height: auto; /* or some appropriate value */
+}

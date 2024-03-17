@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="./css/style.css" />
+  <link rel="stylesheet" href="./node.js/node.js" />
+<script type='text/javascript' src='/js/fullcalendar/main.js'></script>
+<script type='text/javascript' src='/js/fullcalendar/ja.js'></script>
+<script type='text/javascript' src='/js/calendar.js'></script>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/4.2.0/core/main.min.css' rel='stylesheet' />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/4.2.0/daygrid/main.min.css' rel='stylesheet' />
+<script src='https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/4.2.0/core/main.min.js'></script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/4.2.0/daygrid/main.min.js'></script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/4.2.0/interaction/main.min.js'></script>
+
+
+  <title>Chat Interface with Users and Firebase</title>
+  <style>
+    header, main, footer {
+      text-align: center;
+      padding: 10px;
+    }
+    #schedule {
+      margin: auto;
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 10px;
+    }
+    .day {
+      border: 1px solid #ccc;
+      padding: 10px;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Arial', sans-serif;
+      background: #f0f0f0;
+    }
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      max-width: 600px;
+      margin: auto;
+      margin-top: 50px;
+      border: 1px solid #ccc;
+      background: linear-gradient(to right, #d09a7a, #D56256), url('img/nekopi&hiyopi.png');
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-blend-mode: multiply;
+    }
+    .message {
+      display: flex;
+      align-items: flex-end;
+      margin: 8px;
+    }
+    .user-message p {
+      margin: 0;
+      padding: 10px;
+      border-radius: 20px;
+      word-wrap: break-word;
+      font-size: 14px;
+      background: #30e3ca;
+      color: white;
+      align-self: flex-end;
+    }
+    .user1-message {
+      justify-content: flex-start; /* 左寄り */
+    }
+    .user1-message p {
+      background: #c9f7c2;
+    }
+
+    .user2-message {
+      justify-content: flex-end; /* 右寄り */
+    }
+    .user2-message p {
+      background: #e0e0e0;
+    }
+
+    /* アイコンのスタイル */
+    .user-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+    }
+
+    /* メッセージコンテナのスタイル */
+    .message {
+      display: flex;
+      align-items: center;
+      margin: 8px;
+    }
+
+    /* メッセージのテキストスタイル */
+    .message p {
+      margin: 0;
+      padding: 10px;
+      border-radius: 20px;
+      word-wrap: break-word;
+      font-size: 14px;
+    }
+    .chat-interface {
+      padding: 10px;
+      overflow-y: auto;
+      height: 500px;
+    }
+    #uname, #text {
+      width: calc(100% - 40px);
+      padding: 10px;
+      margin: 10px 20px;
+      border: none;
+      border-radius: 20px;
+      box-sizing: border-box;
+    }
+    #send {
+      padding: 10px 20px;
+      background-color: #30e3ca;
+      color: white;
+      border: none;
+      border-radius: 20px;
+      margin: 0 20px 20px;
+      cursor: pointer;
+    }
+    #send:hover {
+      background-color: #2bc1a3;
+    }
+    .user-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      margin-right: 10px;
+    }
+    .user-btn {
+      padding: 10px;
+      margin: 5px;
+      cursor: pointer;
+    }
+    .user-btn.active {
+      background-color: #30e3ca;
+      color: white;
+    }
+
+    #calendar {
+            max-width: 1100px;
+            margin: 40px auto;
+        }
+  </style>
+</head>
+<body>
+
+  <div class="chat-container">
+    <!-- メッセージ入力フィールド -->
+    <textarea id="text" rows="2" placeholder="メッセージを入力"></textarea>
+    <button id="send">送信</button>
+    <!-- チャット表示部分 -->
+    <div id="output" class="chat-interface"></div>
+  </div>
+
+  <header>
+    <h1>ぴえんレポート</h1>
+    <input type="date" id="datePicker">
+  </header>
+  <main>
+    <div id="schedule">
+      <!-- 予定表のスロットはJavaScriptで生成されます -->
+  </div>
+  <div id="column-method" class="column-method">
+      <div id="memo" contenteditable="true"></div>
+      <label for="situation">状況</label>
+      <textarea id="situation" placeholder="状況"></textarea>
+      <label for="feelings">感情</label>
+      <textarea id="feelings" placeholder="感情"></textarea>
+      <label for="thoughts">考え</label>
+      <textarea id="thoughts" placeholder="考え"></textarea>
+      <label for="evidence">考えの根拠</label>
+      <textarea id="evidence" placeholder="考えの根拠"></textarea>
+      <label for="evidence">考えの根拠</label>
+      <textarea id="contraryThoughts" placeholder="考えを否定する別の考え"></textarea>
+      <label for="balancedView">バランスの取れた見方</label>
+      <textarea id="balancedView" placeholder="バランスの取れた見方"></textarea>
+      <button id="analyzeEmotion">感情分析</button>
+      <div id="emotionScore">感情スコア: 未分析</div>
+      <button id="previousDay">&lt;</button>
+<button id="saveMemo">保存</button>
+<button id="showLineChart">ぴえんグラフ</button>
+<!-- 翌日のメモを表示するボタン -->
+<button id="nextDay">&gt;</button>
+  </div>
+  <canvas id="emotionChart"></canvas>
+  <div id="pieChartContainer">
+      <canvas id="pieChart"></canvas>
+  </div>
+  <div id="calendar"></div>
+  </main>
+
+<!-- JQuery -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<!-- Firebase App is always required and must be first -->
+<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js"></script>
+<!-- Add Firebase products that you want to use -->
+<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://apis.google.com/js/api.js"></script>
+  <script src='../dist/index.global.js'></script>
+ 
+
+<script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+  import { getDatabase, ref, push, set, onChildAdded } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+  // Your web app's Firebase configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyCl_E_nkjGbrof0HW2n8Hhunf08BhCvsoo",
+    authDomain: "sample-d11cf.firebaseapp.com",
+    projectId: "sample-d11cf",
+    storageBucket: "sample-d11cf.appspot.com",
+    messagingSenderId: "166372161440",
+    appId: "1:166372161440:web:373e8b40c5d6cc095f16c5"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const dbRef = ref(db, "chat");
+
+    const users = {
+      "ユーザー1": {
+        name: "ユーザー1",
+        iconPath: "img/hiyopi.png", // Corrected path
+        messageClass: "user1-message"
+      },
+      "ユーザー2": {
+        name: "ユーザー2",
+        iconPath: "img/nekopi.png", // Corrected path
+        messageClass: "user2-message"
+      }
+    };
+    let currentUser = 'user1';
+
+    $('.user-btn').on('click', function() {
+    // アクティブなボタンのスタイル変更
+    $('.user-btn').removeClass('active');
+    $(this).addClass('active');
+    // 現在のユーザーの設定
+    currentUser = $(this).attr('id') === 'user1-btn' ? 'user1' : 'user2';
+  });
+
+  function loadMessages() {
+    const dbRef = ref(getDatabase());
+    onChildAdded(dbRef, (data) => {
+      const message = data.val();
+      displayMessage(message.user, message.text);
+    });
+  }
+
+  function displayMessage(user, text) {
+  const messageClass = user === 'ユーザー1' ? 'user1-message' : 'user2-message';
+  const iconPath = user === 'ユーザー1' ? "img/hiyopi.png" : "img/nekopi.png";
+
+  const img = $("<img>").attr({
+    src: iconPath,
+    alt: "User Icon",
+    class: "user-icon"
+  });
+
+  const textP = $("<p>").text(text);
+  const div = $("<div>").addClass(`message ${messageClass}`);
+  div.append(img).append(textP);
+  $('#output').append(div); // メッセージをチャット画面に追加
+}
+
+  function user1ResponseTo(user2Message) {
+  $.ajax({
+    url: '/api/gpt', // This should be the endpoint on your server
+    type: 'POST',
+    contentType: 'application/json',
+    data: JSON.stringify({ message: user2Message }),
+    success: function(response) {
+      // Assume response is structured as { answer: "message from GPT" }
+      displayMessage('ユーザー1', response.answer);
+    },
+    error: function(error) {
+      console.error("Error talking to Nekopi: ", error);
+    }
+  });
+}
+
+  // Function to display a message in the chat
+  function displayMessage(user, text) {
+    const messageClass = user === 'ユーザー1' ? 'user1-message' : 'user2-message';
+    const iconPath = user === 'ユーザー1' ? "img/hiyopi.png" : "img/nekopi.png";
+
+    const img = $("<img>").attr({
+      src: iconPath,
+      alt: "User Icon",
+      class: "user-icon"
+    });
+
+    const textP = $("<p>").text(text);
+    const div = $("<div>").addClass(`message ${messageClass}`);
+    div.append(img).append(textP);
+    $('#output').append(div); // メッセージをチャット画面に追加
+  }
+
+
+
+  // メッセージ送信時のイベントハンドラ...
+  $('#send').on('click', function() {
+    const text = $('#text').val().trim();
+    if(text !== '') {
+      // Firebaseにメッセージを送信
+      const newPostRef = push(ref(getDatabase(), 'chat'));
+      set(newPostRef, {
+        user: currentUser,
+        text: text
+      });
+      $('#text').val(''); // 入力フィールドをクリア
+    }
+  });
+
+  // ページロード時に過去のメッセージをロードする関数を呼び出し
+  loadMessages();
+
+  // メッセージの追加をリッスン
+  onChildAdded(dbRef, function(data) {
+      const v = data.val();
+      const messageClass = v.user === 'user1' ? 'user1-message' : 'user2-message';
+      const iconPath = v.user === 'user1' ? "img/hiyopi.png" : "img/nekopi.png"; // Corrected path
+
+      const img = $("<img>").attr({
+        src: iconPath,
+        alt: "User Icon",
+        class: "user-icon"
+      });
+
+    const textP = $("<p>").text(v.text);
+    const div = $("<div>").addClass(`message ${messageClass}`);
+    div.append(img).append(textP);
+    $('#output').append(div); // メッセージをチャット画面に追加
+  });
+  const API_KEY = '';
+        const CALENDAR_ID = 'taeminnie4ever@gmail.com';
+    
+        function start() {
+          gapi.client.init({
+            'apiKey': API_KEY,
+          }).then(function() {
+            updateSchedule(document.getElementById('datePicker').value);
+          });
+        };
+        gapi.load('client', start);
+    
+        function updateScheduleWithEvents(events) {
+            const scheduleElement = document.getElementById('schedule');
+            scheduleElement.innerHTML = ''; // Clear existing events
+            events.forEach(event => {
+                const eventElement = document.createElement('div');
+                eventElement.className = 'day';
+                const startDate = event.start.date || event.start.dateTime.split('T')[0];
+                eventElement.textContent = event.summary + ' - ' + startDate;
+                scheduleElement.appendChild(eventElement);
+            });
+        }
+    
+        function updateSchedule(selectedDate) {
+            const date = new Date(selectedDate);
+            const startOfWeek = new Date(date.setDate(date.getDate() - date.getDay()));
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(endOfWeek.getDate() + 6);
+    
+            const timeMin = startOfWeek.toISOString();
+            const timeMax = endOfWeek.toISOString();
+        }
+    
+        document.getElementById('datePicker').addEventListener('change', function() {
+            updateSchedule(this.value);
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+  var calendarEl = document.getElementById('calendar');
+
+  var today = new Date().toISOString().split('T')[0]; // Get today's date in 'YYYY-MM-DD' format
+
+  var calendar = new FullCalendar.Calendar(calendarEl, {
+    initialDate: today, // Use today's date
+    initialView: 'timeGridWeek',
+    nowIndicator: true,
+    headerToolbar: {
+      left: 'prev,next today',
+      center: 'title',
+      right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
+    },
+    navLinks: true, // can click day/week names to navigate views
+    editable: true,
+    selectable: true,
+    selectMirror: true,
+    dayMaxEvents: true, // allow "more" link when too many events
+    events: [
+      // Your events here
+    ]
+  });
+
+  calendar.render();
+});
+    </script>
+    
+        </div>
+        <canvas id="emotionChart"></canvas>
+        <div id="pieChartContainer">
+            <canvas id="pieChart"></canvas>
+        </div>
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const schedule = document.getElementById('schedule');
+            const datePicker = document.getElementById('datePicker');
+            const columnMethodDiv = document.getElementById('column-method');
+            const situationInput = document.getElementById('situation');
+            const feelingsInput = document.getElementById('feelings');
+            const thoughtsInput = document.getElementById('thoughts');
+            const evidenceInput = document.getElementById('evidence');
+            const contraryThoughtsInput = document.getElementById('contraryThoughts');
+            const balancedViewInput = document.getElementById('balancedView');
+            const emotionChartCanvas = document.getElementById('emotionChart').getContext('2d');
+            const pieChartCanvas = document.getElementById('pieChart').getContext('2d');
+            const pieChartContainer = document.getElementById('pieChartContainer');
+
+            const emotionScores = {
+                '楽しい': 1, '幸せ': 1, '美味しい': 1, '自信がある': 1,
+                '嬉しい': 1,
+                '楽しみ': 1,
+                'よかった': 0.5,
+                '良い': 0.5,
+                '爽やか': 0.5,
+                'スッキリ': 0.5,
+                'どうでもいい': 0,
+                'ぴえん': 0,
+                'ストレス': 0,
+                '大変': 0,
+                'うーん': 0,
+                'きつい': 0,
+                'やだ': 0,
+                '嫌': 0,
+                'アクシデント': -0.5,
+                '集中できない': -0.5,
+                '病棟が怖い': -0.5,
+                '頭が痛い': -0.5,
+                '自信がない': -0.5,
+                'なにもできない': -0.5,
+                '起きれない': -0.5,
+                '頭痛': -0.5,
+                'いじめ': -0.5,
+                '楽しくない': -0.5,
+                '誰にも会いたくない': -0.5,
+                '悲しい': -0.5,
+                'やめたい': -0.5,
+                'しんどい': -0.5,
+                '寂しい': -0.5,
+                '遅刻': -0.5,
+                '無理': -0.5,
+                '虚しい': -0.5,
+                '混乱': -0.5,
+                '嫌悪': -0.5,
+                '後悔': -0.5,
+                '眠れない': -1,
+                'ねむれない': -1,
+                '行けな': -1,
+                'いけな': -1,
+                '死にたい': -1,
+                'しにたい': -1,
+                '楽しめな': -1,
+                'たのしめな': -1,
+                '食べられな': -1,
+                'たべられな': -1,
+                '怖い': -1,
+                'こわい': -1,
+                '考えられない': -1,
+                'かんえられない': -1,
+                '生きてるのがつらい': -1,
+                'いきてるのがつらい': -1,
+                '消えたい': -1,
+                'きえたい': -1,
+                '動けない': -1,
+                'うごけない': -1,
+                '血尿': -1,
+                '涙': -1,
+                '体調': -1,
+                '遅刻': -1,
+                '動悸': -1,
+                'いない': -1,
+                '起きれな': -1,
+                'おきれな': -1,
+                '感情': -1,
+                'いきて': -1,
+                '生きて': -1,
+                '死ぬ': -1,
+                'しぬ': -1,
+                '行': -1,
+                '眠': -1,
+                'ねむ': -1,
+                'いきたく': -1,
+                'ねれない': -1,
+                '発作': -1,
+                'きつい': -0.5,
+                'もういや': -0.5,
+                '吐く': -1,
+                '無': -0.5,
+            };
+
+            datePicker.valueAsDate = new Date(); // 今日の日付をセット
+
+            document.getElementById('datePicker').addEventListener('change', function() {
+  const selectedDate = this.value;
+  const date = new Date(selectedDate);
+  const startOfWeek = new Date(date.setDate(date.getDate() - date.getDay()));
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(endOfWeek.getDate() + 6);
+
+  const timeMin = startOfWeek.toISOString();
+  const timeMax = endOfWeek.toISOString();
+
+  // Call the Google Calendar API
+  fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent('taeminnie4ever@gmail.com')}/events?timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&orderBy=startTime&key=`)
+    .then(response => response.json())
+    .then(data => {
+      displayEvents(data.items);
+    })
+    .catch(error => {
+      console.error('Error fetching calendar events:', error);
+    });
+});
+
+function displayEvents(events) {
+  // Clear existing events
+  const scheduleElement = document.getElementById('schedule');
+  scheduleElement.innerHTML = '';
+
+  // Loop through events and display them
+  events.forEach(event => {
+    const eventElement = document.createElement('div');
+    eventElement.className = 'day';
+    const startDate = event.start.date || event.start.dateTime.split('T')[0];
+    eventElement.textContent = event.summary + ' - ' + startDate;
+    scheduleElement.appendChild(eventElement);
+  });
+}
+
+
+            function loadMemo(date) {
+                return JSON.parse(localStorage.getItem(date)) || {};
+            }
+
+            function saveMemo(date, memo) {
+                localStorage.setItem(date, JSON.stringify(memo));
+            }
+
+            function displayColumnMethod(date, memo) {
+                situationInput.value = memo.situation || '';
+                feelingsInput.value = memo.feelings || '';
+                thoughtsInput.value = memo.thoughts || '';
+                evidenceInput.value = memo.evidence || '';
+                contraryThoughtsInput.value = memo.contraryThoughts || '';
+                balancedViewInput.value = memo.balancedView || '';
+                document.getElementById('emotionScore').textContent = `感情スコア: ${memo.score || '未分析'}`; // 保存された感情スコアを表示
+                document.getElementById('emotionScore').style.color = memo.color || 'black'; // 保存された文字色を設定
+                columnMethodDiv.style.display = 'block';
+            }
+
+            function updateSchedule(date) {
+                schedule.innerHTML = ''; // 予定表をクリア
+                let startDate = new Date(date);
+                startDate.setDate(startDate.getDate() - startDate.getDay()); // 週の最初の日
+
+                for (let i = 0; i < 7; i++) { // 7日間の予定を生成
+                    let currentDay = new Date(startDate);
+                    currentDay.setDate(currentDay.getDate() + i);
+
+                    const dayElement = document.createElement('div');
+                    dayElement.classList.add('day');
+                    dayElement.textContent = `${currentDay.getMonth() + 1}月 ${currentDay.getDate()}日`;
+                    dayElement.dataset.date = currentDay.toISOString().split('T')[0];
+
+                    const memo = loadMemo(dayElement.dataset.date);
+                    if (memo.situation) {
+                        dayElement.textContent += `: ${memo.situation}`;
+                    }
+                    dayElement.style.color = memo.color || 'black'; // 保存された文字色を設定
+
+                    dayElement.addEventListener('click', function() {
+                        datePicker.value = this.dataset.date; // カレンダーの日付をクリックされた日付に設定
+                        const memo = loadMemo(this.dataset.date);
+                        displayColumnMethod(this.dataset.date, memo);
+                    });
+
+                    schedule.appendChild(dayElement);
+                }
+            }
+
+            function analyzeEmotion(memoText) {
+                let score = 0;
+                let words = memoText.split(/\s+|、|。/); // 空白または句読点で分割
+                words.forEach(word => {
+                    word = word.trim();
+                    if (emotionScores.hasOwnProperty(word)) {
+                        score += emotionScores[word];
+                    }
+                });
+                return score;
+            }
+
+            function setColorBasedOnEmotionScore(score) {
+                const textAreas = document.querySelectorAll('#column-method textarea');
+                textAreas.forEach((textArea) => {
+                    let color;
+                    switch (true) {
+                        case score === 1:
+                            color = 'red';
+                            break;
+                        case score === 0.5:
+                            color = 'orange';
+                            break;
+                        case score === 0:
+                            color = 'green';
+                            break;
+                        case score === -0.5:
+                            color = 'blue';
+                            break;
+                        case score === -1:
+                            color = 'purple';
+                            break;
+                        default:
+                            color = 'black'; // デフォルトの色
+                    }
+                    textArea.style.color = color;
+                });
+            }
+
+            function generateLineChart(data) {
+                const dates = data.map(item => item.date);
+                const scores = data.map(item => item.score);
+
+                const emotionLineChart = new Chart(emotionChartCanvas, {
+                    type: 'line',
+                    data: {
+                        labels: dates,
+                        datasets: [{
+                            label: '感情スコア',
+                            data: scores,
+                            borderColor: 'blue',
+                            fill: false
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            yAxes: [{
+                                ticks: {
+                                    beginAtzero: true
+                                }
+                            }]
+                        }
+                    }
+                });
+            }
+
+            document.getElementById('analyzeEmotion').addEventListener('click', function() {
+                const memoText = [
+                    document.getElementById('situation').value,
+                    document.getElementById('feelings').value,
+                    document.getElementById('thoughts').value,
+                    document.getElementById('evidence').value,
+                    document.getElementById('contraryThoughts').value,
+                    document.getElementById('balancedView').value
+                ].join(' ');
+
+                const score = analyzeEmotion(memoText); // メモテキストから感情スコアを計算
+                document.getElementById('emotionScore').textContent = `感情スコア: ${score}`; // 結果を表示
+
+                setColorBasedOnEmotionScore(score); // 追加された関数を呼び出して、スコアに基づいて色を設定
+            });
+
+            document.getElementById('saveMemo').addEventListener('click', function() {
+                const selectedDate = datePicker.value;
+                if (!selectedDate) {
+                    alert('日付を選択してください。');
+                    return;
+                }
+                const memo = {
+                    situation: situationInput.value,
+                    feelings: feelingsInput.value,
+                    thoughts: thoughtsInput.value,
+                    evidence: evidenceInput.value,
+                    contraryThoughts: contraryThoughtsInput.value,
+                    balancedView: balancedViewInput.value,
+                    score: document.getElementById('emotionScore').textContent.split(': ')[1], // 感情スコアを保存
+                    color: document.getElementById('emotionScore').style.color // 文字色を保存
+                };
+                saveMemo(selectedDate, memo);
+                updateSchedule(datePicker.value);
+                alert('メモを保存しました。');
+            });
+
+            document.getElementById('showLineChart').addEventListener('click', function() {
+  const selectedDate = new Date(datePicker.value);
+  const previousDate = new Date(selectedDate);
+  previousDate.setDate(selectedDate.getDate() - 1);
+  const nextDate = new Date(selectedDate);
+  nextDate.setDate(selectedDate.getDate() + 1);
+
+  const labels = [
+    previousDate.toISOString().split('T')[0], // Date 1 - previous day
+    selectedDate.toISOString().split('T')[0], // Date 2 - selected day
+    nextDate.toISOString().split('T')[0] // Date 3 - next day
+  ];
+
+  // Collect the scores for each date
+  const data = labels.map(date => {
+    const memo = loadMemo(date);
+    return memo.score ? parseFloat(memo.score) : 0; // Use 0 if no score
+  });
+
+  // Update chart with new labels and data
+  emotionChart.data.labels = labels;
+  emotionChart.data.datasets[0].data = data;
+  emotionChart.update();
+});
+
+function updateChart(selectedDate) {
+  // Parse the selected date string and create a date object
+  const date = new Date(selectedDate);
+
+  // Calculate the previous and next dates
+  const prevDate = new Date(date.getTime());
+  prevDate.setDate(date.getDate() - 1);
+  const nextDate = new Date(date.getTime());
+  nextDate.setDate(date.getDate() + 1);
+
+  // Format dates as strings (e.g., '2024-03-16')
+  const formatDate = (d) => d.toISOString().split('T')[0];
+
+  // Update the labels for the x-axis
+  emotionChart.data.labels = [formatDate(prevDate), formatDate(date), formatDate(nextDate)];
+
+  // Retrieve the emotion scores for each date, here it is just dummy data
+  // You need to replace it with the actual scores from your data source
+  const getEmotionScoreForDate = (d) => { /* ... your code to get the score ... */ };
+  emotionChart.data.datasets[0].data = [
+    getEmotionScoreForDate(prevDate), // previous day's score
+    getEmotionScoreForDate(date),     // selected day's score
+    getEmotionScoreForDate(nextDate), // next day's score
+  ];
+
+  // Update the chart
+  emotionChart.update();
+}
+
+// Example of how to call updateChart
+// This should be linked to the date picker's event handler
+// updateChart('2024-03-17');
+
+
+            
+            document.getElementById('previousDay').addEventListener('click', function() {
+    const currentDate = new Date(datePicker.value);
+    currentDate.setDate(currentDate.getDate() - 1);
+    datePicker.value = currentDate.toISOString().split('T')[0];
+    const memo = loadMemo(datePicker.value); // 前日のメモを読み込む
+    displayColumnMethod(datePicker.value, memo); // 前日のメモを表示
+});
+
+document.getElementById('nextDay').addEventListener('click', function() {
+    const currentDate = new Date(datePicker.value);
+    currentDate.setDate(currentDate.getDate() + 1);
+    datePicker.value = currentDate.toISOString().split('T')[0];
+    const memo = loadMemo(datePicker.value); // 翌日のメモを読み込む
+    displayColumnMethod(datePicker.value, memo); // 翌日のメモを表示
+});
+
+var ctx = document.getElementById('emotionChart').getContext('2d');
+var emotionChart = new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: [], // Initially empty, will be set when a date is selected
+    datasets: [{
+      label: '感情スコア',
+      data: [], // Initially empty, will be set when a date is selected
+      borderColor: 'rgb(75, 192, 192)',
+      tension: 0.1
+    }]
+  },
+  options: {
+    scales: {
+      y: {
+        min: -1.0, // Minimum value for y-axis
+        max: 1.0, // Maximum value for y-axis
+        ticks: {
+          // Include a dollar sign in the ticks and ensure they are fixed to 1 decimal place
+          callback: function(value, index, values) {
+            return value.toFixed(1);
+          }
+        }
+      }
+    }
+  }
+});
+
+// Rest of your code for updating the chart based on date selection
+
+
+// Assuming 'datePicker' is your input element for date selection
+document.getElementById('datePicker').addEventListener('change', function() {
+  const selectedDate = new Date(this.value);
+  const previousDate = new Date(selectedDate);
+  previousDate.setDate(selectedDate.getDate() - 1);
+  const nextDate = new Date(selectedDate);
+  nextDate.setDate(selectedDate.getDate() + 1);
+
+  const labels = [
+    previousDate.toISOString().split('T')[0], // Date 1 - previous day
+    selectedDate.toISOString().split('T')[0], // Date 2 - selected day
+    nextDate.toISOString().split('T')[0] // Date 3 - next day
+  ];
+
+  // Collect the scores for each date
+  const data = labels.map(date => {
+    const memo = loadMemo(date); // Replace with your function to load memo
+    return memo.score ? parseFloat(memo.score) : 0; // Use 0 if no score
+  });
+
+  // Update chart with new labels and data
+  emotionChart.data.labels = labels;
+  emotionChart.data.datasets[0].data = data;
+  emotionChart.update();
+});
+
+            // 初期表示用に今週の予定を表示
+            updateSchedule(datePicker.value);
+        });
+    </script>
+    <scrip src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+
+</body>
+</html>
